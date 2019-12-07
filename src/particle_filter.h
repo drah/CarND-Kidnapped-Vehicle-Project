@@ -87,7 +87,9 @@ public:
       const Map &, Particle, double sensor_range);
   std::vector<LandmarkObs> _coord_transform_vehicle_to_map(
       const std::vector<LandmarkObs> &observations, double x, double y, double theta);
-  double _get_weight_of_particle(const std::vector<LandmarkObs> &, const std::vector<LandmarkObs> &);
+  std::vector<LandmarkObs> _get_obs_per_particle(
+    const Map &map_landmarks, const Particle &particle, double sensor_range);
+  double _get_weight_of_particle(const std::vector<LandmarkObs> &obs_per_particle, const std::vector<LandmarkObs> &sensed_obs, double std[]);
 
   /**
    * resample Resamples from the updated set of particles to form
