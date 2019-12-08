@@ -22,6 +22,7 @@ using std::vector;
 #define NUM_PARTICLE (1000)
 #define NOT_EXIST (-1)
 #define EPSILON (1e-5)
+#define DEBUG (1)
 
 void ParticleFilter::init(double x, double y, double theta, double std[])
 {
@@ -54,6 +55,12 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
 
   num_particles = NUM_PARTICLE;
   is_initialized = true;
+#if DEBUG
+std::cout << "---init---";
+for(int p=0; p<particles.size() && p < 5; ++p)
+  std::cout << particles[p].x << ' ' << particles[p].y << ' ' << particles[p].theta << std::endl;
+std::cout << "---init done---";
+#endif
 }
 
 static inline bool is_yaw_rate_considered_zero(double yaw_rate) { return abs(yaw_rate) < EPSILON; }
@@ -85,6 +92,12 @@ void ParticleFilter::_prediction_with_yaw_rate(double delta_t, double std_pos[],
     particles[i].y += velocity / yaw_rate * (cos(theta) - cos(new_theta));
     particles[i].theta = new_theta;
   }
+#if DEBUG
+std::cout << "---prediction_with_yaw---";
+for(int p=0; p<particles.size() && p < 5; ++p)
+  std::cout << particles[p].x << ' ' << particles[p].y << ' ' << particles[p].theta << std::endl;
+std::cout << "---prediction_with_yaw done---";
+#endif
 }
 
 void ParticleFilter::_prediction_without_yaw_rate(double delta_t, double std_pos[], double velocity)
@@ -94,6 +107,12 @@ void ParticleFilter::_prediction_without_yaw_rate(double delta_t, double std_pos
     particles[i].x += velocity * delta_t * cos(particles[i].theta);
     particles[i].y += velocity * delta_t * sin(particles[i].theta);
   }
+#if DEBUG
+std::cout << "---prediction_without_yaw---";
+for(int p=0; p<particles.size() && p < 5; ++p)
+  std::cout << particles[p].x << ' ' << particles[p].y << ' ' << particles[p].theta << std::endl;
+std::cout << "---prediction_without_yaw done---";
+#endif
 }
 
 void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
@@ -122,6 +141,12 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
     }
     observations[i].id = closest_landmark_id;
   }
+#if DEBUG
+std::cout << "---data association---";
+for(int p=0; p<observations.size() && p < 5; ++p)
+  std::cout << observations[p].id << std::endl;
+std::cout << "---data association done---";
+#endif
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
@@ -209,6 +234,11 @@ double ParticleFilter::_get_weight_of_particle(const std::vector<LandmarkObs> &o
       weight *= prob;
   }
   return weight;
+#if DEBUG
+std::cout << "---get weight of a particle---";
+std::cout << weight << std::endl;
+std::cout << "---get weight of a particle done---";
+#endif
 }
 
 void ParticleFilter::resample()
@@ -239,6 +269,12 @@ void ParticleFilter::resample()
   }
 
   particles = sampled_particles;
+#if DEBUG
+std::cout << "---resample---";
+for(int p=0; p<particles.size() && p < 5; ++p)
+  std::cout << particles[p].x << ' ' << particles[p].y << ' ' << particles[p].theta << std::endl;
+std::cout << "---resample done---";
+#endif
 }
 
 void ParticleFilter::SetAssociations(Particle &particle,
