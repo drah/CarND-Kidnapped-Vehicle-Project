@@ -68,7 +68,7 @@ public:
    * @param predicted Vector of predicted landmark observations
    * @param observations Vector of landmark observations
    */
-  void dataAssociation(std::vector<LandmarkObs> predicted,
+  void dataAssociation(const std::vector<LandmarkObs> &predicted,
                        std::vector<LandmarkObs> &observations);
 
   /**
@@ -83,8 +83,10 @@ public:
   void updateWeights(double sensor_range, double std_landmark[],
                      const std::vector<LandmarkObs> &observations,
                      const Map &map_landmarks);
-  std::vector<LandmarkObs> _get_obs_of_particle(
-      const Map &, Particle, double sensor_range);
+
+  void _get_obs_of_particle(
+      std::vector<LandmarkObs> &, const Map &, const Particle &, double sensor_range);
+
   std::vector<LandmarkObs> _coord_transform_vehicle_to_map(
       const std::vector<LandmarkObs> &observations, double x, double y, double theta);
   std::vector<LandmarkObs> _get_obs_per_particle(

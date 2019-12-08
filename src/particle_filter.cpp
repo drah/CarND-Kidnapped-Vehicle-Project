@@ -14,7 +14,7 @@
 using std::string;
 using std::vector;
 
-#define ASSERT (1)
+#define ASSERT (0)
 #if ASSERT
 #include <assert.h>
 #endif
@@ -54,6 +54,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
   }
 
   num_particles = NUM_PARTICLE;
+  weights.resize(NUM_PARTICLE);
   is_initialized = true;
 #if DEBUG
 std::cout << "---init---" << std::endl;
@@ -135,7 +136,7 @@ std::cout << "---prediction_without_yaw done---" << std::endl;
 #endif
 }
 
-void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
+void ParticleFilter::dataAssociation(const vector<LandmarkObs> &predicted,
                                      vector<LandmarkObs> &observations)
 {
   /**
@@ -188,18 +189,21 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    */
   for (int p = 0; p < particles.size(); ++p)
   {
-    std::vector<LandmarkObs> obs_per_particle = _get_obs_per_particle(map_landmarks, particles[p], sensor_range);
+    std::vector<LandmarkObs> obs_per_particle;
+    _get_obs_of_particle(obs_per_particle, map_landmarks, particles[p], sensor_range);
+
     std::vector<LandmarkObs> sensed_obs_in_map_coord = _coord_transform_vehicle_to_map(observations, particles[p].x, particles[p].y, particles[p].theta);
+
     dataAssociation(obs_per_particle, sensed_obs_in_map_coord);
+
     particles[p].weight = _get_weight_of_particle(obs_per_particle, sensed_obs_in_map_coord, std_landmark);
+    weights[p] = particles[p].weight;
   }
-  weights = _copy_particles_weight_out();
 }
 
-std::vector<LandmarkObs> ParticleFilter::_get_obs_per_particle(
-    const Map &map_landmarks, const Particle &particle, double sensor_range)
+void ParticleFilter::_get_obs_of_particle(
+    std::vector<LandmarkObs> &obs_of_particle, const Map &map_landmarks, const Particle &particle, double sensor_range)
 {
-  std::vector<LandmarkObs> obs_of_particle;
   for (int l = 0; l < map_landmarks.landmark_list.size(); ++l)
   {
     const Map::single_landmark_s &landmark = map_landmarks.landmark_list[l];
@@ -207,7 +211,6 @@ std::vector<LandmarkObs> ParticleFilter::_get_obs_per_particle(
     if (distance <= sensor_range)
       obs_of_particle.push_back(LandmarkObs(landmark.id_i, landmark.x_f, landmark.y_f));
   }
-  return obs_of_particle;
 }
 
 std::vector<LandmarkObs> ParticleFilter::_coord_transform_vehicle_to_map(
