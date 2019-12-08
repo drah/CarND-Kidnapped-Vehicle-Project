@@ -90,6 +90,7 @@ public:
   std::vector<LandmarkObs> _get_obs_per_particle(
     const Map &map_landmarks, const Particle &particle, double sensor_range);
   double _get_weight_of_particle(const std::vector<LandmarkObs> &obs_per_particle, const std::vector<LandmarkObs> &sensed_obs, double std[]);
+  std::vector<double> _copy_particles_weight_out();
 
   /**
    * resample Resamples from the updated set of particles to form

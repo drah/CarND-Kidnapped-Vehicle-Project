@@ -19,10 +19,10 @@ using std::vector;
 #include <assert.h>
 #endif
 
-#define NUM_PARTICLE (1000)
+#define NUM_PARTICLE (100)
 #define NOT_EXIST (-1)
 #define EPSILON (1e-5)
-#define DEBUG (1)
+#define DEBUG (0)
 
 void ParticleFilter::init(double x, double y, double theta, double std[])
 {
@@ -35,7 +35,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
    *   (and others in this file).
    */
 #if ASSERT
-  assert(sizeof(std) / sizeof(*std) == 3);
+  //assert(sizeof(std) / sizeof(*std) == 3);
 #endif
 
   double weight_per_particle = 1. / NUM_PARTICLE;
@@ -45,7 +45,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
   std::normal_distribution<double> noise_y(0, std[1]);
   std::normal_distribution<double> noise_theta(0, std[2]);
 
-  for (int i = 0; i < num_particles; ++i)
+  for (int i = 0; i < NUM_PARTICLE; ++i)
   {
     double sampled_x = x + noise_x(rng);
     double sampled_y = y + noise_y(rng);
@@ -56,14 +56,14 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
   num_particles = NUM_PARTICLE;
   is_initialized = true;
 #if DEBUG
-std::cout << "---init---";
+std::cout << "---init---" << std::endl;
 for(int p=0; p<particles.size() && p < 5; ++p)
   std::cout << particles[p].x << ' ' << particles[p].y << ' ' << particles[p].theta << std::endl;
-std::cout << "---init done---";
+std::cout << "---init done---" << std::endl;
 #endif
 }
 
-static inline bool is_yaw_rate_considered_zero(double yaw_rate) { return abs(yaw_rate) < EPSILON; }
+static inline bool is_yaw_rate_considered_zero(double yaw_rate) { return fabs(yaw_rate) < EPSILON; }
 void ParticleFilter::prediction(double delta_t, double std_pos[],
                                 double velocity, double yaw_rate)
 {
@@ -84,6 +84,12 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
 
 void ParticleFilter::_prediction_with_yaw_rate(double delta_t, double std_pos[], double velocity, double yaw_rate)
 {
+  std::random_device rd;
+  std::mt19937 rng(rd());
+  std::normal_distribution<double> noise_x(0, std_pos[0]);
+  std::normal_distribution<double> noise_y(0, std_pos[1]);
+  std::normal_distribution<double> noise_theta(0, std_pos[2]);
+
   for (int i = 0; i < particles.size(); ++i)
   {
     double theta = particles[i].theta;
@@ -91,27 +97,41 @@ void ParticleFilter::_prediction_with_yaw_rate(double delta_t, double std_pos[],
     particles[i].x += velocity / yaw_rate * (sin(new_theta) - sin(theta));
     particles[i].y += velocity / yaw_rate * (cos(theta) - cos(new_theta));
     particles[i].theta = new_theta;
+    
+    particles[i].x += noise_x(rng);
+    particles[i].y += noise_y(rng);
+    particles[i].theta += noise_theta(rng);
   }
 #if DEBUG
-std::cout << "---prediction_with_yaw---";
+std::cout << "---prediction_with_yaw---" << std::endl;
 for(int p=0; p<particles.size() && p < 5; ++p)
   std::cout << particles[p].x << ' ' << particles[p].y << ' ' << particles[p].theta << std::endl;
-std::cout << "---prediction_with_yaw done---";
+std::cout << "---prediction_with_yaw done---" << std::endl;
 #endif
 }
 
 void ParticleFilter::_prediction_without_yaw_rate(double delta_t, double std_pos[], double velocity)
 {
+  std::random_device rd;
+  std::mt19937 rng(rd());
+  std::normal_distribution<double> noise_x(0, std_pos[0]);
+  std::normal_distribution<double> noise_y(0, std_pos[1]);
+  std::normal_distribution<double> noise_theta(0, std_pos[2]);
+
   for (int i = 0; i < particles.size(); ++i)
   {
     particles[i].x += velocity * delta_t * cos(particles[i].theta);
     particles[i].y += velocity * delta_t * sin(particles[i].theta);
+
+    particles[i].x += noise_x(rng);
+    particles[i].y += noise_y(rng);
+    particles[i].theta += noise_theta(rng);
   }
 #if DEBUG
-std::cout << "---prediction_without_yaw---";
+std::cout << "---prediction_without_yaw---" << std::endl;
 for(int p=0; p<particles.size() && p < 5; ++p)
   std::cout << particles[p].x << ' ' << particles[p].y << ' ' << particles[p].theta << std::endl;
-std::cout << "---prediction_without_yaw done---";
+std::cout << "---prediction_without_yaw done---" << std::endl;
 #endif
 }
 
@@ -142,10 +162,10 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
     observations[i].id = closest_landmark_id;
   }
 #if DEBUG
-std::cout << "---data association---";
+std::cout << "---data association---" << std::endl;
 for(int p=0; p<observations.size() && p < 5; ++p)
   std::cout << observations[p].id << std::endl;
-std::cout << "---data association done---";
+std::cout << "---data association done---" << std::endl;
 #endif
 }
 
@@ -173,6 +193,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     dataAssociation(obs_per_particle, sensed_obs_in_map_coord);
     particles[p].weight = _get_weight_of_particle(obs_per_particle, sensed_obs_in_map_coord, std_landmark);
   }
+  weights = _copy_particles_weight_out();
 }
 
 std::vector<LandmarkObs> ParticleFilter::_get_obs_per_particle(
@@ -235,10 +256,17 @@ double ParticleFilter::_get_weight_of_particle(const std::vector<LandmarkObs> &o
   }
   return weight;
 #if DEBUG
-std::cout << "---get weight of a particle---";
+std::cout << "---get weight of a particle---" << std::endl;
 std::cout << weight << std::endl;
-std::cout << "---get weight of a particle done---";
+std::cout << "---get weight of a particle done---" << std::endl;
 #endif
+}
+
+std::vector<double> ParticleFilter::_copy_particles_weight_out(){
+  std::vector<double> weights;
+  for(int p=0; p<particles.size(); ++p)
+    weights.push_back(particles[p].weight);
+  return weights;
 }
 
 void ParticleFilter::resample()
@@ -251,11 +279,10 @@ void ParticleFilter::resample()
    */
 #if ASSERT
   assert(weights.size() != 0);
-  double sum = 0.0;
-  for (int i = 0; i < weights.size(); ++i)
-    sum += weights[i];
-  assert(abs(sum - 1.) < EPSILON);
 #endif
+  for(int i=0; i<weights.size(); ++i)
+    if(weights[i] < EPSILON)
+      weights[i] = EPSILON;
 
   std::random_device rd;
   std::mt19937 rng(rd());
@@ -270,10 +297,10 @@ void ParticleFilter::resample()
 
   particles = sampled_particles;
 #if DEBUG
-std::cout << "---resample---";
+std::cout << "---resample---" << std::endl;
 for(int p=0; p<particles.size() && p < 5; ++p)
-  std::cout << particles[p].x << ' ' << particles[p].y << ' ' << particles[p].theta << std::endl;
-std::cout << "---resample done---";
+  std::cout << sampled_particles[p].x << ' ' << sampled_particles[p].y << ' ' << sampled_particles[p].theta << std::endl;
+std::cout << "---resample done---" << std::endl;
 #endif
 }
 
